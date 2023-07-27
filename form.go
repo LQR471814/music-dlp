@@ -142,8 +142,8 @@ func Prompt(info JsonInfo) (Metadata, error) {
 	err := survey.AskOne(
 		&survey.Input{
 			Default: info.Title,
-			Message: "Track Title",
-			Help:    "The track title.",
+			Message: "track title",
+			Help:    "the track title.",
 		},
 		&title,
 	)
