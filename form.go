@@ -1,7 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -11,19 +16,24 @@ import (
 	"strconv"
 	"strings"
 
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/bogem/id3v2/v2"
+	"github.com/disintegration/imaging"
 	"github.com/gabriel-vasile/mimetype"
 )
 
 var urlRegex = regexp.MustCompile(`https?:\/\/`)
 
 type Metadata struct {
-	Title  string
-	Artist string
-	Album  string
-	Cover  string // this is a url or filename
-	Year   int
+	Title        string
+	Artist       string
+	Album        string
+	Cover        string // this is a url or filename
+	Year         int
+	CropToSquare bool
 }
 
 func (m Metadata) Write(tag *id3v2.Tag) {
@@ -31,7 +41,7 @@ func (m Metadata) Write(tag *id3v2.Tag) {
 	tag.SetArtist(m.Artist)
 	tag.SetAlbum(m.Album)
 	tag.SetYear(fmt.Sprint(m.Year))
-	picture, err := GetCover(m.Cover)
+	picture, err := GetCover(m.Cover, m.CropToSquare)
 	if err == nil {
 		tag.AddAttachedPicture(picture)
 	} else {
@@ -39,7 +49,7 @@ func (m Metadata) Write(tag *id3v2.Tag) {
 	}
 }
 
-func GetCover(cover string) (id3v2.PictureFrame, error) {
+func GetCover(cover string, crop bool) (id3v2.PictureFrame, error) {
 	var coverSource io.Reader
 
 	if urlRegex.MatchString(cover) {
@@ -65,15 +75,48 @@ func GetCover(cover string) (id3v2.PictureFrame, error) {
 	mime := mimetype.Detect(contents)
 	mimestring := mime.String()
 
-	if strings.HasPrefix(mimestring, "image") {
-		return id3v2.PictureFrame{
-			Encoding:    id3v2.EncodingUTF8,
-			MimeType:    mimestring,
-			Picture:     contents,
-			PictureType: id3v2.PTFrontCover,
-		}, nil
+	if !strings.HasPrefix(mimestring, "image") {
+		return id3v2.PictureFrame{}, fmt.Errorf("invalid image format %s", mimestring)
 	}
-	return id3v2.PictureFrame{}, fmt.Errorf("invalid image format %s", mimestring)
+
+	if crop {
+		cropped, filetype, err := CropImage(contents)
+		if err != nil {
+			log.Println("failed crop, fallback to non-cropped image:", err.Error())
+		} else {
+			contents = cropped
+			mimestring = filetype
+		}
+	}
+
+	return id3v2.PictureFrame{
+		Encoding:    id3v2.EncodingUTF8,
+		MimeType:    mimestring,
+		Picture:     contents,
+		PictureType: id3v2.PTFrontCover,
+	}, nil
+}
+
+func CropImage(contents []byte) ([]byte, string, error) {
+	img, _, err := image.Decode(bytes.NewBuffer(contents))
+	if err != nil {
+		return nil, "", err
+	}
+
+	x := img.Bounds().Dx()
+	y := img.Bounds().Dy()
+	side := x
+	if y < x {
+		side = y
+	}
+
+	cropped := imaging.CropCenter(img, side, side)
+	buffer := bytes.NewBuffer(nil)
+	err = png.Encode(buffer, cropped)
+	if err != nil {
+		return nil, "", err
+	}
+	return buffer.Bytes(), "image/png", nil
 }
 
 func AutoCompleteDirectory(input string) ([]string, error) {
@@ -167,16 +210,29 @@ func Prompt(info JsonInfo) (Metadata, error) {
 		return Metadata{}, err
 	}
 
+	var cropSquare string
+	err = survey.AskOne(
+		&survey.Select{
+			Message: "crop cover to square?",
+			Options: []string{"yes", "no"},
+		},
+		&cropSquare,
+	)
+	if err != nil {
+		return Metadata{}, err
+	}
+
 	year, err := strconv.Atoi(yearString)
 	if err != nil {
 		return Metadata{}, err
 	}
 
 	return Metadata{
-		Title:  title,
-		Artist: artist,
-		Album:  album,
-		Cover:  cover,
-		Year:   year,
+		Title:        title,
+		Artist:       artist,
+		Album:        album,
+		Cover:        cover,
+		Year:         year,
+		CropToSquare: cropSquare == "yes",
 	}, nil
 }
