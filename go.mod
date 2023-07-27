@@ -1,4 +1,4 @@
-module yt-dlp-music
+module music-dlp
 
 go 1.20
 
