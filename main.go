@@ -125,6 +125,7 @@ func download(href string) error {
 			Title:  info.Title,
 			Artist: info.Uploader,
 			Album:  info.Title,
+			Year:   info.UploadDate[:4],
 		}
 		err = tagForm.EditUI(info.Thumbnail, true, info.Description)
 		if err != nil {
