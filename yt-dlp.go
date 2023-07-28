@@ -43,8 +43,9 @@ func Download(url string) (string, error) {
 		url,
 	)
 
-	_, err := cmd.Output()
+	output, err := cmd.Output()
 	if err != nil {
+		fmt.Println(string(output))
 		return "", err
 	}
 	return folderName, nil
