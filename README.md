@@ -4,7 +4,7 @@
 
 ```
 usage:
-./yt-dlp-music YOUTUBE_LINK
+./music-dlp YOUTUBE_LINK or FILENAME
 ```
 
 ### features
@@ -16,3 +16,5 @@ yt-dlp --write-info-json -x --audio-format mp3 --sponsorblock-mark all -o %(titl
 ```
 
 then it provides an interface for changing the output file's metadata.
+
+you can also provide a filename instead of a youtube link to edit an mp3 file's metadata.

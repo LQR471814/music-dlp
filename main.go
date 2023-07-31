@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("usage:\n%s YOUTUBE_LINK\n", os.Args[0])
+		fmt.Printf("usage:\n%s YOUTUBE_LINK or FILENAME\n", os.Args[0])
 		os.Exit(-1)
 	}
 	linkOrFile := os.Args[1]
