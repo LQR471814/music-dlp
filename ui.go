@@ -183,7 +183,7 @@ func (f *TagForm) EditUI(previewSource string, cropImage bool, comments string) 
 
 	keyboardShortcuts := tview.NewTextView().
 		SetText(
-			"[ESC] discard changes and quit\n[CTRL] + [\\] clear current field",
+			"[ESC] or [CTRL] + [Q] discard changes and quit\n[CTRL] + [\\] clear current field\n[TAB] switch fields\n[CTRL] + [T] toggle focus between form and description",
 		)
 	keyboardShortcuts.SetBorder(true)
 	keyboardShortcuts.SetTitle("keyboard shortcuts")
@@ -196,7 +196,7 @@ func (f *TagForm) EditUI(previewSource string, cropImage bool, comments string) 
 
 	leftColumn := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(keyboardShortcuts, 4, 1, false).
+		AddItem(keyboardShortcuts, 6, 1, false).
 		AddItem(form, 0, 2, false).
 		AddItem(commentView, 0, 3, false)
 
@@ -205,8 +205,18 @@ func (f *TagForm) EditUI(previewSource string, cropImage bool, comments string) 
 		AddItem(leftColumn, 0, 1, false).
 		AddItem(previewBox, 0, 1, false)
 
+	formFocused := true
+	formFocusedPtr := &formFocused
+
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyCtrlT:
+			if *formFocusedPtr {
+				app.SetFocus(form)
+			} else {
+				app.SetFocus(commentView)
+			}
+			*formFocusedPtr = !*formFocusedPtr
 		case tcell.KeyCtrlQ, tcell.KeyESC:
 			app.Stop()
 		}

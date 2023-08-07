@@ -12,7 +12,7 @@ usage:
 it runs `yt-dlp` using the following flags.
 
 ```
-yt-dlp --write-info-json -x --audio-format mp3 --sponsorblock-mark all -o %(title)s.%(ext)s
+yt-dlp --write-info-json -x --audio-format mp3 --sponsorblock-remove all -o %(title)s.%(ext)s
 ```
 
 then it provides an interface for changing the output file's metadata.

@@ -38,7 +38,7 @@ func Download(url string) (string, error) {
 		"yt-dlp",
 		"--write-info-json", "-x",
 		"--audio-format", "mp3",
-		"--sponsorblock-mark", "all",
+		"--sponsorblock-remove", "all",
 		"-o", fmt.Sprintf("%s/%%(title)s.%%(ext)s", folderName),
 		url,
 	)
